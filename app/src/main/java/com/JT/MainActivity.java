@@ -2,12 +2,13 @@ package com.JT;
 
 import android.app.*;
 import android.os.*;
-import android.util.*;
+import android.view.*;
 import android.webkit.*;
 import android.widget.*;
 import android.widget.LinearLayout.*;
+import java.io.*;
 import java.lang.reflect.*;
-import android.view.*;
+import java.util.*;
 
 public class MainActivity extends Activity 
 {
@@ -15,20 +16,26 @@ public class MainActivity extends Activity
 	public WebView mWebView;
 	public LinearLayout LL;
 	public ProgressBar PB;
+	public static MainActivity mInstance;
+	public int indx;
+	public Handler mHander;
+	public List<String> proxies;
 	
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+		mHander = new Handler();
 		
 		mWebView = new WebView(this);
+		indx = 0;
 		
 		LL = (LinearLayout) findViewById(R.id.mainLinearLayout1);
 		PB = (ProgressBar) findViewById(R.id.mainProgressBar1);
 		
 		mWebView.setLayoutParams(new LinearLayout.LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
-													 
+			
 		// Enable Javascript
 		WebSettings webSettings = mWebView.getSettings();
 		webSettings.setJavaScriptEnabled(true);
@@ -38,13 +45,42 @@ public class MainActivity extends Activity
 		
 		LL.addView(mWebView, 1);
 		
-		if(setProxy(mWebView, "118.98.216.122", 8080, null) == true){
-			mWebView.loadUrl("https://whatismyipaddress.com");
+		File baseDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/");
+		if(!baseDir.exists()){
+			baseDir.mkdirs();
+		}
+		
+		String fullpath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/proxies.txt";
+		File p = new File(fullpath);
+		
+		if (p.exists()){
+		
+			String line = "";
+			
+			try {
+				FileReader fReader = new FileReader(p);
+				BufferedReader bReader = new BufferedReader(fReader);
+				
+				while( (line = bReader.readLine()) != null  ){
+					//text.append(line+"\n");
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}else{
 			
 		}
 		
+		mWebView.loadUrl("https://whatismyipaddress.com");
+		
     }
+	
+	public static MainActivity getInstance(){
+		if(mInstance == null){
+			return new MainActivity();
+		}
+		return mInstance;
+	}
 	
 	private static Object getFieldValueSafely(Field field, Object classInstance) throws IllegalArgumentException, IllegalAccessException {
 		boolean oldAccessibleValue = field.isAccessible();
@@ -52,6 +88,11 @@ public class MainActivity extends Activity
 		Object result = field.get(classInstance);
 		field.setAccessible(oldAccessibleValue);
 		return result;
+	}
+	
+	public WebView getWebView()
+	{
+		return mWebView;
 	}
 	
 	/**
@@ -130,9 +171,35 @@ public class MainActivity extends Activity
 		{
 			// TODO: Implement this method
 			PB.setVisibility(View.INVISIBLE);
+			//startService(new Intent(getApplicationContext(), BotService.class));
 			super.onPageFinished(view, url);
+			indx++;
+			mHander.post(new BotRunnable(indx));
 		}
 		
     }
+	
+	public class BotRunnable implements Runnable
+	{
+		public int indx;
+		
+		public BotRunnable(int i){
+			indx = i;
+		}
+
+		@Override
+		public void run()
+		{
+			// TODO: Implement this method
+			//if(indx < 3){
+				if(setProxy(mWebView, "118.98.216.122", 8080, null) == true){
+					mWebView.loadUrl("https://www.ip-secrets.com/");
+				}else{
+					Toast.makeText(getApplicationContext(), "Failed", Toast.LENGTH_SHORT).show();
+				}
+			//}
+			
+		}
+	}
 	
 }
