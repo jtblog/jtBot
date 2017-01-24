@@ -44,6 +44,7 @@ public class MainActivity extends Activity
 		mWebView.setWebChromeClient(new mWebChromeClient());
 		
 		LL.addView(mWebView, 1);
+		proxies = new ArrayList<String>();
 		
 		File baseDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/");
 		if(!baseDir.exists()){
@@ -62,16 +63,17 @@ public class MainActivity extends Activity
 				BufferedReader bReader = new BufferedReader(fReader);
 				
 				while( (line = bReader.readLine()) != null  ){
-					//text.append(line+"\n");
+					proxies.add(line);
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			
+			mWebView.loadUrl("https://whatismyipaddress.com");
+			
 		}else{
 			
 		}
-		
-		mWebView.loadUrl("https://whatismyipaddress.com");
 		
     }
 	
@@ -191,13 +193,18 @@ public class MainActivity extends Activity
 		public void run()
 		{
 			// TODO: Implement this method
-			//if(indx < 3){
-				if(setProxy(mWebView, "118.98.216.122", 8080, null) == true){
+			if(proxies.size() > 0 && !proxies.get(0).trim().equalsIgnoreCase("")){
+				
+				String[] params = proxies.get(indx).split(":");
+				String proxy = params[0];
+				int port = Integer.parseInt(params[1]);
+				
+				if(setProxy(mWebView, proxy, port, null) == true){
 					mWebView.loadUrl("https://www.ip-secrets.com/");
 				}else{
 					Toast.makeText(getApplicationContext(), "Failed", Toast.LENGTH_SHORT).show();
 				}
-			//}
+			}
 			
 		}
 	}
