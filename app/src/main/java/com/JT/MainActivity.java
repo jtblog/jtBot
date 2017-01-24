@@ -7,6 +7,7 @@ import android.webkit.*;
 import android.widget.*;
 import android.widget.LinearLayout.*;
 import java.lang.reflect.*;
+import android.view.*;
 
 public class MainActivity extends Activity 
 {
@@ -32,11 +33,16 @@ public class MainActivity extends Activity
 		WebSettings webSettings = mWebView.getSettings();
 		webSettings.setJavaScriptEnabled(true);
 		
-		mWebView.setWebViewClient(new MyAppWebViewClient());
+		mWebView.setWebViewClient(new mWebViewClient());
+		mWebView.setWebChromeClient(new mWebChromeClient());
 		
 		LL.addView(mWebView, 1);
 		
-		mWebView.loadUrl("https://google.com");
+		if(setProxy(mWebView, "118.98.216.122", 8080, null) == true){
+			mWebView.loadUrl("https://whatismyipaddress.com");
+		}else{
+			
+		}
 		
     }
 	
@@ -89,15 +95,43 @@ public class MainActivity extends Activity
 
 		} catch (Exception ex) {
 			Toast.makeText(getApplicationContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
-			Log.e("","Setting proxy with >= 4.1 API failed with error: " + ex.getMessage());
 			return false;
 		}
-
-		Log.d("", "Setting proxy with >= 4.1 API successful!");
+		
 		return true;
 	}
 	
-	public class MyAppWebViewClient extends WebViewClient {
+	public class mWebChromeClient extends WebChromeClient
+	{
+
+		@Override
+		public void onProgressChanged(WebView view, int newProgress)
+		{
+			// TODO: Implement this method
+			super.onProgressChanged(view, newProgress);
+			PB.setProgress(newProgress);
+		}
+		
+	}
+	
+	public class mWebViewClient extends WebViewClient
+	{
+
+		@Override
+		public boolean shouldOverrideUrlLoading(WebView view, String url)
+		{
+			// TODO: Implement this method
+			PB.setVisibility(View.VISIBLE);
+			return super.shouldOverrideUrlLoading(view, url);
+		}
+
+		@Override
+		public void onPageFinished(WebView view, String url)
+		{
+			// TODO: Implement this method
+			PB.setVisibility(View.INVISIBLE);
+			super.onPageFinished(view, url);
+		}
 		
     }
 	
