@@ -1,6 +1,7 @@
 package com.JT;
 
 import android.app.*;
+import android.content.*;
 import android.os.*;
 import android.view.*;
 import android.webkit.*;
@@ -69,7 +70,7 @@ public class MainActivity extends Activity
 				e.printStackTrace();
 			}
 			
-			mWebView.loadUrl("https://whatismyipaddress.com");
+			mWebView.loadUrl("https://jtblog.github.io");
 			
 		}else{
 			
@@ -173,10 +174,10 @@ public class MainActivity extends Activity
 		{
 			// TODO: Implement this method
 			PB.setVisibility(View.INVISIBLE);
-			//startService(new Intent(getApplicationContext(), BotService.class));
+			startService(new Intent(getApplicationContext(), BotService.class));
 			super.onPageFinished(view, url);
-			indx++;
-			mHander.post(new BotRunnable(indx));
+			//indx++;
+			//mHander.post(new BotRunnable(indx));
 		}
 		
     }
@@ -198,12 +199,23 @@ public class MainActivity extends Activity
 				String[] params = proxies.get(indx).split(":");
 				String proxy = params[0];
 				int port = Integer.parseInt(params[1]);
-				
-				if(setProxy(mWebView, proxy, port, null) == true){
-					mWebView.loadUrl("https://www.ip-secrets.com/");
+				if(port == 443 || port == 8080){
+					if(setProxy(mWebView, proxy, port, null) == true){
+						try{
+							mWebView.loadUrl("https://jtblog.github.io");
+						}catch(Exception e){}
+					}else{
+						Toast.makeText(getApplicationContext(), "Failed", Toast.LENGTH_SHORT).show();
+					}
 				}else{
-					Toast.makeText(getApplicationContext(), "Failed", Toast.LENGTH_SHORT).show();
+					indx++;
+					mHander.post(this);
 				}
+				
+				if(indx == proxies.size()){
+					indx = 0;
+				}
+				
 			}
 			
 		}

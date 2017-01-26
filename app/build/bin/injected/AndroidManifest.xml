@@ -41,6 +41,18 @@
 
 		</activity>
 
+		<receiver
+			android:name=".BotReceiver">
+
+			<intent-filter>
+
+				<action
+					android:name="BotAction0"/>
+
+			</intent-filter>
+
+		</receiver>
+
 		<service
 			android:name=".BotService"/>
 
