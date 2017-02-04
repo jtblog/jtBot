@@ -13,7 +13,7 @@ import java.util.*;
 
 public class MainActivity extends Activity 
 {
-	
+
 	public WebView mWebView;
 	public LinearLayout LL;
 	public ProgressBar PB;
@@ -21,29 +21,32 @@ public class MainActivity extends Activity
 	public int indx;
 	public Handler mHander;
 	public List<String> proxies;
-	
+
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 		mHander = new Handler();
+
+		StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+		StrictMode.setThreadPolicy(policy);
 		
 		mWebView = new WebView(this);
 		indx = 0;
-		
+
 		LL = (LinearLayout) findViewById(R.id.mainLinearLayout1);
 		PB = (ProgressBar) findViewById(R.id.mainProgressBar1);
-		
+
 		mWebView.setLayoutParams(new LinearLayout.LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
-			
+
 		// Enable Javascript
 		WebSettings webSettings = mWebView.getSettings();
 		webSettings.setJavaScriptEnabled(true);
-		
+
 		mWebView.setWebViewClient(new mWebViewClient());
 		mWebView.setWebChromeClient(new mWebChromeClient());
-		
+
 		LL.addView(mWebView, 1);
 		proxies = new ArrayList<String>();
 		
@@ -51,40 +54,45 @@ public class MainActivity extends Activity
 		if(!baseDir.exists()){
 			baseDir.mkdirs();
 		}
-		
+
 		String fullpath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/proxies.txt";
 		File p = new File(fullpath);
-		
+
 		if (p.exists()){
-		
+
 			String line = "";
-			
+
 			try {
 				FileReader fReader = new FileReader(p);
 				BufferedReader bReader = new BufferedReader(fReader);
-				
+
 				while( (line = bReader.readLine()) != null  ){
 					proxies.add(line);
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			
-			mWebView.loadUrl("https://jtblog.github.io");
-			
+
+			//mWebView.loadUrl("https://jtblog.github.io");
+
 		}else{
-			
+
 		}
-		
+
+		startService(new Intent(getApplicationContext(), BotService.class));
+		//new BotAsyncTask().execute();
+		//mHander.post(new BotRunnable1(indx));
     }
-	
+
+	/*
 	public static MainActivity getInstance(){
 		if(mInstance == null){
 			return new MainActivity();
 		}
 		return mInstance;
 	}
-	
+	*/
+
 	private static Object getFieldValueSafely(Field field, Object classInstance) throws IllegalArgumentException, IllegalAccessException {
 		boolean oldAccessibleValue = field.isAccessible();
 		field.setAccessible(true);
@@ -92,12 +100,12 @@ public class MainActivity extends Activity
 		field.setAccessible(oldAccessibleValue);
 		return result;
 	}
-	
+
 	public WebView getWebView()
 	{
 		return mWebView;
 	}
-	
+
 	/**
 	 * Set Proxy for Android 4.1 and above.
 	 */
@@ -141,10 +149,10 @@ public class MainActivity extends Activity
 			Toast.makeText(getApplicationContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
 			return false;
 		}
-		
+
 		return true;
 	}
-	
+
 	public class mWebChromeClient extends WebChromeClient
 	{
 
@@ -155,9 +163,9 @@ public class MainActivity extends Activity
 			super.onProgressChanged(view, newProgress);
 			PB.setProgress(newProgress);
 		}
-		
+
 	}
-	
+
 	public class mWebViewClient extends WebViewClient
 	{
 
@@ -174,18 +182,18 @@ public class MainActivity extends Activity
 		{
 			// TODO: Implement this method
 			PB.setVisibility(View.INVISIBLE);
-			startService(new Intent(getApplicationContext(), BotService.class));
+			//startService(new Intent(getApplicationContext(), BotService.class));
 			super.onPageFinished(view, url);
 			//indx++;
 			//mHander.post(new BotRunnable(indx));
 		}
-		
+
     }
-	
+
 	public class BotRunnable implements Runnable
 	{
 		public int indx;
-		
+
 		public BotRunnable(int i){
 			indx = i;
 		}
@@ -195,7 +203,7 @@ public class MainActivity extends Activity
 		{
 			// TODO: Implement this method
 			if(proxies.size() > 0 && !proxies.get(0).trim().equalsIgnoreCase("")){
-				
+
 				String[] params = proxies.get(indx).split(":");
 				String proxy = params[0];
 				int port = Integer.parseInt(params[1]);
@@ -211,14 +219,26 @@ public class MainActivity extends Activity
 					indx++;
 					mHander.post(this);
 				}
-				
+
 				if(indx == proxies.size()){
 					indx = 0;
 				}
-				
+
 			}
-			
+
 		}
 	}
 	
+	class BotAsyncTask extends AsyncTask<Void,Void,Void>
+	{
+
+		@Override
+		protected Void doInBackground(Void[] p1)
+		{
+			// TODO: Implement this method
+			
+			return null;
+		}
+	}
+
 }

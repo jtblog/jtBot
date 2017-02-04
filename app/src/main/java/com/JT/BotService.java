@@ -3,13 +3,15 @@ package com.JT;
 import android.app.*;
 import android.content.*;
 import android.os.*;
-import android.view.*;
 import android.webkit.*;
 import android.widget.*;
 import android.widget.LinearLayout.*;
+import info.guardianproject.netcipher.*;
 import java.io.*;
 import java.lang.reflect.*;
+import java.net.*;
 import java.util.*;
+import javax.net.ssl.*;
 
 public class BotService extends Service
 {
@@ -56,7 +58,7 @@ public class BotService extends Service
 		mWebView.setWebChromeClient(new mWebChromeClient());
 
 		proxies = new ArrayList<String>();
-
+		
 		File baseDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/");
 		if(!baseDir.exists()){
 			baseDir.mkdirs();
@@ -80,12 +82,20 @@ public class BotService extends Service
 				e.printStackTrace();
 			}
 
-			mWebView.loadUrl("https://jtblog.github.io");
+			//mWebView.loadUrl("https://jtblog.github.io");
 
 		}else{
 
 		}
-		Toast.makeText(getApplicationContext(), "Started", Toast.LENGTH_SHORT).show();
+		
+		Toast.makeText(getApplicationContext(), "Bot Service Started", Toast.LENGTH_SHORT).show();
+		
+		//String[] params = proxies.get(2).split(":");
+		//String proxy = params[0];
+		//String port = params[1];
+		
+		mHander.post(new BotRunnable(indx));
+
 		return START_STICKY;
 	}
 	
@@ -160,6 +170,15 @@ public class BotService extends Service
 	{
 
 		@Override
+		public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse)
+		{
+			// TODO: Implement this method
+			indx++;
+			mHander.post(new BotRunnable(indx));
+			super.onReceivedHttpError(view, request, errorResponse);
+		}
+
+		@Override
 		public boolean shouldOverrideUrlLoading(WebView view, String url)
 		{
 			// TODO: Implement this method
@@ -177,11 +196,12 @@ public class BotService extends Service
 		}
 
     }
-
+	
 	public class BotRunnable implements Runnable
 	{
 		public int indx;
-
+		//public String pproxies;
+		
 		public BotRunnable(int i){
 			indx = i;
 		}
@@ -195,26 +215,45 @@ public class BotService extends Service
 				String[] params = proxies.get(indx).split(":");
 				String proxy = params[0];
 				int port = Integer.parseInt(params[1]);
-				if(!(port == 0)){
-					if(setProxy(mWebView, proxy, port, null) == true){
-						Toast.makeText(getApplicationContext(), proxies.get(indx), Toast.LENGTH_SHORT).show();
-						try{
-							mWebView.loadUrl("https://jtblog.github.io");
-						}catch(Exception e){}
+
+				try
+				{
+					URL url = new URL("https://jtblog.github.io/");
+					NetCipher.setProxy(proxy, port);
+					HttpsURLConnection connection = NetCipher.getHttpsURLConnection(url);
+
+					connection.setReadTimeout(10000);
+					connection.setConnectTimeout(10000);
+					connection.setRequestMethod("GET");
+					//connection.setDoInput(true);
+
+					// Connect
+					connection.connect();
+
+					if(connection.getResponseCode() == HttpsURLConnection.HTTP_OK){
+						if(proxies.contains(proxies.get(indx))){
+							proxies.remove(proxies.get(indx));
+						}
 					}else{
-						Toast.makeText(getApplicationContext(), "Failed", Toast.LENGTH_SHORT).show();
+						Toast.makeText(getApplicationContext(), proxies.get(indx), Toast.LENGTH_LONG).show();
 					}
-				}else{
-					indx++;
-					mHander.post(this);
+
+					indx ++;
+					connection.disconnect();
+
+				}
+				catch (IOException e)
+				{
+					indx ++;
 				}
 
-				if(indx == proxies.size()){
+				if(indx == proxies.size() - 1){
 					indx = 0;
 				}
 
+				mHander.post(new BotRunnable(indx));
 			}
-
+			
 		}
 	}
 	
