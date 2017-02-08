@@ -79,7 +79,31 @@ public class MainActivity extends Activity
 
 		}
 
-		startService(new Intent(getApplicationContext(), BotService.class));
+		/*
+		try{
+
+			for(int i = 0; i < proxies.size(); i++){
+
+				String[] params = proxies.get(i).split(":");
+				String proxy = params[0];
+				int port = Integer.parseInt(params[1]);
+
+				setProxy(mWebView, proxy, port, null);
+
+				mWebView.loadUrl("https://jtblog.github.io");
+			}
+
+			//Toast.makeText(getApplicationContext(), String.valueOf(response.body().contentLength()), Toast.LENGTH_SHORT).show();
+
+		}catch(Exception e){
+
+		}
+		*/
+		
+		if(!isServiceRunning(BotService.class) == true){
+			startService(new Intent(getApplicationContext(), BotService.class));
+		}
+		
 		//new BotAsyncTask().execute();
 		//mHander.post(new BotRunnable1(indx));
     }
@@ -92,6 +116,19 @@ public class MainActivity extends Activity
 		return mInstance;
 	}
 	*/
+	
+	public boolean isServiceRunning(Class<?> serviceClass){
+        ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+
+        // Loop through the running services
+        for(ActivityManager.RunningServiceInfo service : activityManager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                // If the service is running then return true
+                return true;
+            }
+        }
+        return false;
+    }
 
 	private static Object getFieldValueSafely(Field field, Object classInstance) throws IllegalArgumentException, IllegalAccessException {
 		boolean oldAccessibleValue = field.isAccessible();
