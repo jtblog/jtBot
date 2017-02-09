@@ -117,7 +117,11 @@ public class BotService extends Service
 			mWebView.getSettings().setUserAgentString(userAgents.get(indx));
 			
 			Toast.makeText(getApplicationContext(), "Bot Service Started", Toast.LENGTH_SHORT).show();
-			mWebView.loadUrl("https://jtblog.github.io");
+			
+			HashMap hm = new HashMap();
+			hm.put("Referrer", "http://google.com");
+			
+			mWebView.loadUrl("https://jtblog.github.io", hm);
 			mHandler.post(new BotRunnable1());
 		}else{
 			mHandler.postDelayed(new BotRunnable0(), 10000);
@@ -343,8 +347,10 @@ public class BotService extends Service
 			int indx1 = r1.nextInt(userAgents.size() - 1);
 			view.getSettings().setUserAgentString(userAgents.get(indx1));
 
-			view.loadUrl("https://jtblog.github.io");
-			
+			HashMap hm = new HashMap();
+			hm.put("Referrer", "http://google.com");
+
+			view.loadUrl("https://jtblog.github.io", hm);
 			//super.onReceivedError(view, request, error);
 		}
 		
@@ -352,6 +358,24 @@ public class BotService extends Service
 		public boolean shouldOverrideUrlLoading(WebView view, String url)
 		{
 			// TODO: Implement this method
+			Random r = new Random();
+			indx = r.nextInt(proxies.size() - 1);
+
+			//Toast.makeText(getApplicationContext(), String.valueOf(indx), Toast.LENGTH_SHORT).show();
+			String[] params = proxies.get(indx).split(":");
+			String proxy = params[0];
+			int port = Integer.parseInt(params[1]);
+
+			setProxy(mWebView, proxy, port, null);
+
+			Random r1 = new Random();
+			int indx1 = r1.nextInt(userAgents.size() - 1);
+			view.getSettings().setUserAgentString(userAgents.get(indx1));
+			
+			HashMap hm = new HashMap();
+			hm.put("Referrer", "http://google.com");
+			
+			view.loadUrl(url, hm);
 			
 			return super.shouldOverrideUrlLoading(view, url);
 		}
@@ -379,7 +403,10 @@ public class BotService extends Service
 			int indx1 = r1.nextInt(userAgents.size() - 1);
 			view.getSettings().setUserAgentString(userAgents.get(indx1));
 			
-			view.loadUrl(url);
+			HashMap hm = new HashMap();
+			hm.put("Referrer", "http://google.com");
+			
+			view.loadUrl(url, hm);
 			
 			
 			/*
