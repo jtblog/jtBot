@@ -16,6 +16,7 @@ import java.util.*;
 import javax.net.ssl.*;
 
 import android.net.Proxy;
+import android.os.PowerManager.*;
 
 public class BotService extends Service
 {
@@ -25,6 +26,8 @@ public class BotService extends Service
 	public Handler mHandler;
 	public List<String> proxies;
 	public List<String> userAgents;
+
+	public PowerManager.WakeLock wakeLock;
 	
 	//private String testUrl = "http://correostrack.edgaruribe.mx/proxy.php";
 	//public String testUrl = "https://api.ipify.org";
@@ -98,6 +101,11 @@ public class BotService extends Service
 		}
 
 		LoadAgents();
+		
+		PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+		wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+													 "MyWakelockTag");
+		wakeLock.acquire();
 		
 		if(proxies.size() > 0){
 			
@@ -255,6 +263,11 @@ public class BotService extends Service
 		@Override
 		public void run()
 		{
+			PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+			wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+												"MyWakelockTag");
+			wakeLock.acquire();
+			
 			// TODO: Implement this method
 			Random r = new Random();
 			int i = r.nextInt(proxies.size() - 1);
@@ -310,6 +323,11 @@ public class BotService extends Service
 		@Override
 		public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error)
 		{
+			PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+			wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+												"MyWakelockTag");
+			wakeLock.acquire();
+			
 			// TODO: Implement this method
 			Random r = new Random();
 			indx = r.nextInt(proxies.size() - 1);
@@ -342,6 +360,10 @@ public class BotService extends Service
 		public void onPageFinished(WebView view, String url)
 		{
 			// TODO: Implement this method
+			PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+			wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+												"MyWakelockTag");
+			wakeLock.acquire();
 			
 			Random r = new Random();
 			indx = r.nextInt(proxies.size() - 1);

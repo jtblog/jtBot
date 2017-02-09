@@ -4,7 +4,8 @@
 	android:layout_height="match_parent"
 	android:layout_width="match_parent"
 	android:orientation="vertical"
-	android:id="@+id/mainLinearLayout1">
+	android:id="@+id/mainLinearLayout1"
+	android:keepScreenOn="true"	>
 
 	<ProgressBar
 		android:layout_height="6dp"
@@ -13,4 +14,3 @@
 		android:id="@+id/mainProgressBar1"/>
 
 </LinearLayout>
-
