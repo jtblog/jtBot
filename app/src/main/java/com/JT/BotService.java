@@ -35,7 +35,9 @@ public class BotService extends Service
 		// TODO: Implement this method
 		Intent i = new Intent("BotAction0");
 		sendBroadcast(i);
-		//startService(new Intent(getApplicationContext(), BotService.class));
+		if(!isServiceRunning(BotService.class, getApplicationContext()) == true){
+			startService(new Intent(getApplicationContext(), BotService.class));
+		}
 		super.onDestroy();
 	}
 
@@ -104,6 +106,8 @@ public class BotService extends Service
 			int port = Integer.parseInt(params[1]);
 			
 			Boolean sp = setProxy(mWebView, proxy, port, null);
+			mWebView.getSettings().setUserAgentString(userAgents.get(indx));
+			
 			Toast.makeText(getApplicationContext(), "Bot Service Started", Toast.LENGTH_SHORT).show();
 			mWebView.loadUrl("https://jtblog.github.io");
 			mHandler.post(new BotRunnable1());
@@ -269,7 +273,11 @@ public class BotService extends Service
 			 		URL url = new URL(adr1);
 			 		NetCipher.setProxy(proxy, port);
 			 		connection = NetCipher.getHttpsURLConnection(url);
-
+					
+					Random r1 = new Random();
+					int indx1 = r1.nextInt(userAgents.size() - 1);
+					connection.setRequestProperty("User-Agent", userAgents.get(indx1));
+					
 			 		//connection.setReadTimeout(10000);
 			 		//connection.setConnectTimeout(10000);
 			 		connection.setRequestMethod("GET");
@@ -312,6 +320,10 @@ public class BotService extends Service
 			int port = Integer.parseInt(params[1]);
 
 			setProxy(mWebView, proxy, port, null);
+			
+			Random r1 = new Random();
+			int indx1 = r1.nextInt(userAgents.size() - 1);
+			view.getSettings().setUserAgentString(userAgents.get(indx1));
 
 			view.loadUrl("https://jtblog.github.io");
 			
@@ -341,6 +353,10 @@ public class BotService extends Service
 
 			setProxy(mWebView, proxy, port, null);
 
+			Random r1 = new Random();
+			int indx1 = r1.nextInt(userAgents.size() - 1);
+			view.getSettings().setUserAgentString(userAgents.get(indx1));
+			
 			view.loadUrl(url);
 			
 			
@@ -353,6 +369,19 @@ public class BotService extends Service
 			*/
 		}
 
+    }
+	
+	public boolean isServiceRunning(Class<?> serviceClass, Context p1){
+        ActivityManager activityManager = (ActivityManager) p1.getSystemService(Context.ACTIVITY_SERVICE);
+
+        // Loop through the running services
+        for(ActivityManager.RunningServiceInfo service : activityManager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                // If the service is running then return true
+                return true;
+            }
+        }
+        return false;
     }
 
 }

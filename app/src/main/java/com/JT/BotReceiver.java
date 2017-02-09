@@ -12,7 +12,7 @@ public class BotReceiver extends BroadcastReceiver
 		// TODO: Implement this method
 		if(!isServiceRunning(BotService.class, p1) == true){
 			p1.startActivity(new Intent(p1, MainActivity.class));
-			//p1.startService(new Intent(p1, BotService.class));
+			p1.startService(new Intent(p1, BotService.class));
 		}
 		
 	}
