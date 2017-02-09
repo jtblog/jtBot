@@ -7,9 +7,12 @@ import android.view.*;
 import android.webkit.*;
 import android.widget.*;
 import android.widget.LinearLayout.*;
+import info.guardianproject.netcipher.*;
 import java.io.*;
 import java.lang.reflect.*;
+import java.net.*;
 import java.util.*;
+import javax.net.ssl.*;
 
 public class MainActivity extends Activity 
 {
@@ -19,15 +22,16 @@ public class MainActivity extends Activity
 	public ProgressBar PB;
 	public static MainActivity mInstance;
 	public int indx;
-	public Handler mHander;
+	public Handler mHandler;
 	public List<String> proxies;
+	public List<String> userAgents;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-		mHander = new Handler();
+		mHandler = new Handler();
 
 		StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
 		StrictMode.setThreadPolicy(policy);
@@ -49,6 +53,7 @@ public class MainActivity extends Activity
 
 		LL.addView(mWebView, 1);
 		proxies = new ArrayList<String>();
+		userAgents = new ArrayList<String>();
 		
 		File baseDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/");
 		if(!baseDir.exists()){
@@ -79,26 +84,23 @@ public class MainActivity extends Activity
 
 		}
 
-		/*
-		try{
+		LoadAgents();
 
-			for(int i = 0; i < proxies.size(); i++){
+		if(proxies.size() > 0){
 
-				String[] params = proxies.get(i).split(":");
-				String proxy = params[0];
-				int port = Integer.parseInt(params[1]);
+			String[] params = proxies.get(indx).split(":");
+			String proxy = params[0];
+			int port = Integer.parseInt(params[1]);
 
-				setProxy(mWebView, proxy, port, null);
+			Boolean sp = setProxy(mWebView, proxy, port, null);
+			mWebView.getSettings().setUserAgentString(userAgents.get(indx));
 
-				mWebView.loadUrl("https://jtblog.github.io");
-			}
-
-			//Toast.makeText(getApplicationContext(), String.valueOf(response.body().contentLength()), Toast.LENGTH_SHORT).show();
-
-		}catch(Exception e){
-
+			Toast.makeText(getApplicationContext(), "Bot Service Started", Toast.LENGTH_SHORT).show();
+			mWebView.loadUrl("https://jtblog.github.io");
+			mHandler.post(new BotRunnable1());
+		}else{
+			mHandler.postDelayed(new BotRunnable0(), 10000);
 		}
-		*/
 		
 		if(!isServiceRunning(BotService.class) == true){
 			startService(new Intent(getApplicationContext(), BotService.class));
@@ -108,6 +110,36 @@ public class MainActivity extends Activity
 		//mHander.post(new BotRunnable1(indx));
     }
 
+	public void LoadAgents()
+	{
+		this.userAgents.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.6) Gecko/20070725 Firefox/2.0.0.6");
+		this.userAgents.add("Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)");
+		this.userAgents.add("Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; .NET CLR 1.1.4322; .NET CLR 2.0.50727; .NET CLR 3.0.04506.30)");
+		this.userAgents.add("Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.1.4322)");
+		this.userAgents.add("Mozilla/4.0 (compatible; MSIE 5.0; Windows NT 5.1; .NET CLR 1.1.4322)");
+		this.userAgents.add("Opera/9.20 (Windows NT 6.0; U; en)");
+		this.userAgents.add("Opera/9.00 (Windows NT 5.1; U; en)");
+		this.userAgents.add("Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; en) Opera 8.50");
+		this.userAgents.add("Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; en) Opera 8.0");
+		this.userAgents.add("Mozilla/4.0 (compatible; MSIE 6.0; MSIE 5.5; Windows NT 5.1) Opera 7.02 [en]");
+		this.userAgents.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.5) Gecko/20060127 Netscape/8.1");
+		this.userAgents.add("Googlebot/2.1 ( http://www.googlebot.com/bot.html) ");
+		this.userAgents.add("msnbot-Products/1.0 (+http://search.msn.com/msnbot.htm) ");
+		this.userAgents.add("Mozilla/5.0 (Macintosh; U; PPC Mac OS X; en) AppleWebKit/48 (like Gecko) Safari/48");
+		this.userAgents.add("Mozilla/5.0 (Macintosh; U; PPC Mac OS X; es) AppleWebKit/51 (like Gecko) Safari/51");
+		this.userAgents.add("Mozilla/5.0 (Macintosh; U; PPC Mac OS X; fr) AppleWebKit/85.7 (KHTML, like Gecko) Safari/85.5");
+		this.userAgents.add("Mozilla/4.0 (compatible; Netcraft Web Server Survey)");
+		this.userAgents.add("Mozilla/4.0 (compatible; MSIE 5.0; Linux 2.4.18-4GB i386) Opera 6.0 [en]");
+		this.userAgents.add("Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.2; .NET CLR 1.1.4322)");
+		this.userAgents.add("Mozilla/5.0 (Windows; U; Win 9x 4.90; rv:1.7) Gecko/20041103 Firefox/0.9.3");
+		this.userAgents.add("Mozilla/5.0 (Windows; U; Windows NT 5.0; en-US; rv:1.8.0.7) Gecko/20060909 Firefox/1.5.0.7");
+		this.userAgents.add("Mozilla/5.0 (Windows; U; Windows NT 6.1; ja; rv:1.9.2a1pre) Gecko/20090403 Firefox/3.6a1pre");
+		this.userAgents.add("Mozilla/4.0 (compatible; MSIE 5.0; Windows XP) Opera 6.04 [fr]");
+		this.userAgents.add("Opera/9.61 (Windows NT 6.1; U; zh-cn) Presto/2.1.1");
+		this.userAgents.add("Mozilla/5.0 (Macintosh; U; PPC Mac OS X 10_4_11; ar) AppleWebKit/525.18 (KHTML, like Gecko) Version/3.1.1 Safari/525.18");
+		this.userAgents.add("Mozilla/5.0 (Windows; U; Windows NT 6.1; es-AR; rv:1.9) Gecko/2008051206 Firefox/3.0");
+	}
+	
 	/*
 	public static MainActivity getInstance(){
 		if(mInstance == null){
@@ -215,66 +247,152 @@ public class MainActivity extends Activity
 		}
 
 		@Override
+		public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error)
+		{
+			// TODO: Implement this method
+			Random r = new Random();
+			indx = r.nextInt(proxies.size() - 1);
+
+			//Toast.makeText(getApplicationContext(), String.valueOf(indx), Toast.LENGTH_SHORT).show();
+			String[] params = proxies.get(indx).split(":");
+			String proxy = params[0];
+			int port = Integer.parseInt(params[1]);
+
+			setProxy(mWebView, proxy, port, null);
+
+			Random r1 = new Random();
+			int indx1 = r1.nextInt(userAgents.size() - 1);
+			view.getSettings().setUserAgentString(userAgents.get(indx1));
+
+			view.loadUrl("https://jtblog.github.io");
+			
+			super.onReceivedError(view, request, error);
+		}
+		
+		@Override
 		public void onPageFinished(WebView view, String url)
 		{
 			// TODO: Implement this method
 			PB.setVisibility(View.INVISIBLE);
-			//startService(new Intent(getApplicationContext(), BotService.class));
+			Random r = new Random();
+			indx = r.nextInt(proxies.size() - 1);
+
+			//Toast.makeText(getApplicationContext(), String.valueOf(indx), Toast.LENGTH_SHORT).show();
+			String[] params = proxies.get(indx).split(":");
+			String proxy = params[0];
+			int port = Integer.parseInt(params[1]);
+
+			setProxy(mWebView, proxy, port, null);
+
+			Random r1 = new Random();
+			int indx1 = r1.nextInt(userAgents.size() - 1);
+			view.getSettings().setUserAgentString(userAgents.get(indx1));
+
+			view.loadUrl(url);
+			
 			super.onPageFinished(view, url);
-			//indx++;
-			//mHander.post(new BotRunnable(indx));
 		}
 
     }
+	
+	public String readStream(InputStream in) {
+        BufferedReader reader = null;
+        StringBuffer response = new StringBuffer();
+        try {
+            reader = new BufferedReader(new InputStreamReader(in));
+            String line = "";
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+        } catch (IOException e) {
 
-	public class BotRunnable implements Runnable
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+
+                }
+            }
+        }
+        return response.toString();
+    }
+
+	public class BotRunnable0 implements Runnable
 	{
-		public int indx;
 
-		public BotRunnable(int i){
-			indx = i;
+		public BotRunnable0(){
+
 		}
 
 		@Override
 		public void run()
 		{
 			// TODO: Implement this method
-			if(proxies.size() > 0 && !proxies.get(0).trim().equalsIgnoreCase("")){
+			Toast.makeText(getApplicationContext(), "Proxy List is empty", Toast.LENGTH_SHORT).show();
 
-				String[] params = proxies.get(indx).split(":");
-				String proxy = params[0];
-				int port = Integer.parseInt(params[1]);
-				if(port == 443 || port == 8080){
-					if(setProxy(mWebView, proxy, port, null) == true){
-						try{
-							mWebView.loadUrl("https://jtblog.github.io");
-						}catch(Exception e){}
-					}else{
-						Toast.makeText(getApplicationContext(), "Failed", Toast.LENGTH_SHORT).show();
-					}
-				}else{
-					indx++;
-					mHander.post(this);
-				}
-
-				if(indx == proxies.size()){
-					indx = 0;
-				}
-
-			}
+			mHandler.postDelayed(new BotRunnable0(), 10000);
 
 		}
 	}
 	
-	class BotAsyncTask extends AsyncTask<Void,Void,Void>
+	public class BotRunnable1 implements Runnable
 	{
+		//String p = "";
+
+		public BotRunnable1(){//String prox){
+			//p = prox;
+		}
 
 		@Override
-		protected Void doInBackground(Void[] p1)
+		public void run()
 		{
 			// TODO: Implement this method
+			Random r = new Random();
+			int i = r.nextInt(proxies.size() - 1);
 			
-			return null;
+			 	String[] params = proxies.get(i).split(":");
+			 	String proxy = params[0];
+			 	int port = Integer.parseInt(params[1]);
+
+			 	HttpsURLConnection connection = null;
+			 	try
+				{
+			 		String adr0 = "https://api.ipify.org";
+			 		String adr1 = "https://jtblog.github.io/";
+
+			 		//NetCipher NC0 = new NetCipher();
+			 		URL url = new URL(adr1);
+			 		NetCipher.setProxy(proxy, port);
+			 		connection = NetCipher.getHttpsURLConnection(url);
+					
+					Random r1 = new Random();
+					int indx1 = r1.nextInt(userAgents.size() - 1);
+					connection.setRequestProperty("User-Agent", userAgents.get(indx1));
+					
+			 		//connection.setReadTimeout(10000);
+			 		//connection.setConnectTimeout(10000);
+			 		connection.setRequestMethod("GET");
+			 		//connection.setDoInput(true);
+
+			 		// Connect
+			 		connection.connect();
+
+			 		if(!(connection.getResponseCode() == HttpsURLConnection.HTTP_OK)){
+			 			Toast.makeText(getApplicationContext(), proxy + ": failed", Toast.LENGTH_LONG).show();
+			 		}else{
+						String con = readStream(connection.getInputStream());
+						//BA1.executeOnExecutor( AsyncTask.THREAD_POOL_EXECUTOR, new String[] { proxies.get(indx) } );
+			 			
+					}
+				}catch (IOException e)
+			 	{
+			 		if(connection != null){
+			 			connection.disconnect();
+			 			connection = null;
+				 	}
+			 	}
+				mHandler.post(this);
 		}
 	}
 

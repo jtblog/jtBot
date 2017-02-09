@@ -21,10 +21,10 @@ public class BotService extends Service
 {
 
 	public WebView mWebView;
-	public static int indx;
-	public static Handler mHandler;
-	public static List<String> proxies;
-	public static List<String> userAgents;
+	public int indx;
+	public Handler mHandler;
+	public List<String> proxies;
+	public List<String> userAgents;
 	
 	//private String testUrl = "http://correostrack.edgaruribe.mx/proxy.php";
 	//public String testUrl = "https://api.ipify.org";
