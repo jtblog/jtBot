@@ -1,11 +1,8 @@
 package com.JT;
 
-import android.annotation.*;
 import android.app.*;
 import android.content.*;
-import android.net.*;
 import android.os.*;
-import android.util.*;
 import android.webkit.*;
 import android.widget.*;
 import info.guardianproject.netcipher.*;
@@ -13,10 +10,8 @@ import java.io.*;
 import java.lang.reflect.*;
 import java.net.*;
 import java.util.*;
+import java.util.regex.*;
 import javax.net.ssl.*;
-
-import android.net.Proxy;
-import android.os.PowerManager.*;
 
 public class BotService extends Service
 {
@@ -26,6 +21,7 @@ public class BotService extends Service
 	public Handler mHandler;
 	public List<String> proxies;
 	public List<String> userAgents;
+	public List<String> checker;
 
 	public PowerManager.WakeLock wakeLock;
 	
@@ -70,6 +66,7 @@ public class BotService extends Service
 		
 		proxies = new ArrayList<String>();
 		userAgents = new ArrayList<String>();
+		checker = new ArrayList<String>();
 
 		File baseDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/");
 		if(!baseDir.exists()){
@@ -249,9 +246,94 @@ public class BotService extends Service
 		public void run()
 		{
 			// TODO: Implement this method
-			Toast.makeText(getApplicationContext(), "Proxy List is empty", Toast.LENGTH_SHORT).show();
-			
-			mHandler.postDelayed(new BotRunnable0(), 10000);
+			//Toast.makeText(getApplicationContext(), "Proxy List is empty", Toast.LENGTH_SHORT).show();
+			HttpURLConnection connection = null;
+			try
+			{
+				String adr0 = "https://api.ipify.org";
+				String adr1 = "https://jtblog.github.io/";
+				String adr2 = "http://txt.proxyspy.net/proxy.txt";
+
+				//NetCipher NC0 = new NetCipher();
+				URL url = new URL(adr2);
+				//NetCipher.setProxy(proxy, port);
+				connection = NetCipher.getHttpURLConnection(url);
+
+				//Random r1 = new Random();
+				//int indx1 = r1.nextInt(userAgents.size() - 1);
+				//connection.setRequestProperty("User-Agent", userAgents.get(indx1));
+
+				//connection.setReadTimeout(10000);
+				//connection.setConnectTimeout(10000);
+				connection.setRequestMethod("GET");
+				connection.setDoInput(true);
+
+				// Connect
+				connection.connect();
+
+				String fullpath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/proxy0.txt";
+				File d = new File(fullpath);
+				d.createNewFile();
+
+				final FileOutputStream fileOutputStream = new FileOutputStream(d);
+				final byte buffer[] = new byte[16 * 1024];
+
+				final InputStream inputStream = connection.getInputStream();
+
+				int len1 = 0;
+				while ((len1 = inputStream.read(buffer)) > 0) {
+					fileOutputStream.write(buffer, 0, len1);
+				}
+
+				fileOutputStream.flush();
+				fileOutputStream.close();
+
+				String line = "";
+
+				try {
+					FileReader fReader = new FileReader(d);
+					BufferedReader bReader = new BufferedReader(fReader);
+
+					String text = "";
+					while( (line = bReader.readLine()) != null  ){
+						text = text + line;
+					}
+
+					String pattern = "\\d{1,3}(?:\\.\\d{1,3}){3}(?::\\d{1,5})?";
+					Pattern compiledPattern = Pattern.compile(pattern);
+					Matcher matcher = compiledPattern.matcher(text);
+					while (matcher.find()) {
+						checker.add(matcher.group());
+					}
+					
+					String fullpath0 = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/proxies.txt";
+					File d0 = new File(fullpath0);
+					d0.createNewFile();
+
+					FileOutputStream stream = new FileOutputStream(d0);
+
+					for(int i2 = 0; i2 < checker.size(); i2++){
+						String s = checker.get(i2) + "\n";
+						stream.write(s.getBytes());
+					}
+
+					stream.flush();
+					stream.close();
+
+					//	Toast.makeText(getApplicationContext(), checker.get(0), Toast.LENGTH_SHORT).show();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+
+			}catch (IOException e)
+			{
+				if(connection != null){
+					connection.disconnect();
+					connection = null;
+				}
+			}
+		
+			//mHandler.postDelayed(new BotRunnable0(), 10000);
 			
 		}
 	}
@@ -298,18 +380,30 @@ public class BotService extends Service
 			 		//connection.setReadTimeout(10000);
 			 		//connection.setConnectTimeout(10000);
 			 		connection.setRequestMethod("GET");
-			 		//connection.setDoInput(true);
+			 		connection.setDoInput(true);
 
 			 		// Connect
 			 		connection.connect();
+					
+					/*
+					String fullpath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/index.html";
+					File d = new File(fullpath);
+					d.createNewFile();
 
-			 		if(!(connection.getResponseCode() == HttpsURLConnection.HTTP_OK)){
-			 			Toast.makeText(getApplicationContext(), proxy + ": failed", Toast.LENGTH_LONG).show();
-			 		}else{
-						String con = readStream(connection.getInputStream());
-						//BA1.executeOnExecutor( AsyncTask.THREAD_POOL_EXECUTOR, new String[] { proxies.get(indx) } );
-			 			
+					final FileOutputStream fileOutputStream = new FileOutputStream(d);
+					final byte buffer[] = new byte[16 * 1024];
+
+					final InputStream inputStream = connection.getInputStream();
+
+					int len1 = 0;
+					while ((len1 = inputStream.read(buffer)) > 0) {
+						fileOutputStream.write(buffer, 0, len1);
 					}
+
+					fileOutputStream.flush();
+					fileOutputStream.close();
+					*/
+			 		
 				}catch (IOException e)
 			 	{
 			 		if(connection != null){
@@ -317,6 +411,12 @@ public class BotService extends Service
 			 			connection = null;
 				 	}
 			 	}
+				
+			if(connection != null){
+				connection.disconnect();
+				connection = null;
+			}
+				
 				mHandler.post(this);
 		}
 	}

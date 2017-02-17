@@ -12,7 +12,7 @@ import java.io.*;
 import java.lang.reflect.*;
 import java.net.*;
 import java.util.*;
-import javax.net.ssl.*;
+import java.util.regex.*;
 
 public class MainActivity extends Activity 
 {
@@ -25,6 +25,7 @@ public class MainActivity extends Activity
 	public Handler mHandler;
 	public List<String> proxies;
 	public List<String> userAgents;
+	public List<String> checker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -55,6 +56,8 @@ public class MainActivity extends Activity
 		proxies = new ArrayList<String>();
 		userAgents = new ArrayList<String>();
 		
+		checker = new ArrayList<String>();
+		
 		File baseDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/");
 		if(!baseDir.exists()){
 			baseDir.mkdirs();
@@ -78,36 +81,21 @@ public class MainActivity extends Activity
 				e.printStackTrace();
 			}
 
-			//mWebView.loadUrl("https://jtblog.github.io");
-
 		}else{
 
 		}
 
 		LoadAgents();
-
+		//mWebView.loadUrl("http://txt.proxyspy.net/proxy.txt");
 		if(proxies.size() > 0){
-
-			String[] params = proxies.get(indx).split(":");
-			String proxy = params[0];
-			int port = Integer.parseInt(params[1]);
-
-			Boolean sp = setProxy(mWebView, proxy, port, null);
-			mWebView.getSettings().setUserAgentString(userAgents.get(indx));
-
-			Toast.makeText(getApplicationContext(), "Bot Service Started", Toast.LENGTH_SHORT).show();
-			mWebView.loadUrl("https://jtblog.github.io");
-			mHandler.post(new BotRunnable1());
+        	//mHandler.post(new BotRunnable1());
 		}else{
-			mHandler.postDelayed(new BotRunnable0(), 10000);
+			
 		}
 		
 		if(!isServiceRunning(BotService.class) == true){
 			startService(new Intent(getApplicationContext(), BotService.class));
 		}
-		
-		//new BotAsyncTask().execute();
-		//mHander.post(new BotRunnable1(indx));
     }
 
 	public void LoadAgents()
@@ -250,21 +238,6 @@ public class MainActivity extends Activity
 		public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error)
 		{
 			// TODO: Implement this method
-			Random r = new Random();
-			indx = r.nextInt(proxies.size() - 1);
-
-			//Toast.makeText(getApplicationContext(), String.valueOf(indx), Toast.LENGTH_SHORT).show();
-			String[] params = proxies.get(indx).split(":");
-			String proxy = params[0];
-			int port = Integer.parseInt(params[1]);
-
-			setProxy(mWebView, proxy, port, null);
-
-			Random r1 = new Random();
-			int indx1 = r1.nextInt(userAgents.size() - 1);
-			view.getSettings().setUserAgentString(userAgents.get(indx1));
-
-			view.loadUrl("https://jtblog.github.io");
 			
 			super.onReceivedError(view, request, error);
 		}
@@ -274,21 +247,6 @@ public class MainActivity extends Activity
 		{
 			// TODO: Implement this method
 			PB.setVisibility(View.INVISIBLE);
-			Random r = new Random();
-			indx = r.nextInt(proxies.size() - 1);
-
-			//Toast.makeText(getApplicationContext(), String.valueOf(indx), Toast.LENGTH_SHORT).show();
-			String[] params = proxies.get(indx).split(":");
-			String proxy = params[0];
-			int port = Integer.parseInt(params[1]);
-
-			setProxy(mWebView, proxy, port, null);
-
-			Random r1 = new Random();
-			int indx1 = r1.nextInt(userAgents.size() - 1);
-			view.getSettings().setUserAgentString(userAgents.get(indx1));
-
-			view.loadUrl(url);
 			
 			super.onPageFinished(view, url);
 		}
@@ -355,20 +313,21 @@ public class MainActivity extends Activity
 			 	String proxy = params[0];
 			 	int port = Integer.parseInt(params[1]);
 
-			 	HttpsURLConnection connection = null;
+			 	HttpURLConnection connection = null;
 			 	try
 				{
 			 		String adr0 = "https://api.ipify.org";
 			 		String adr1 = "https://jtblog.github.io/";
+					String adr2 = "http://txt.proxyspy.net/proxy.txt";
 
 			 		//NetCipher NC0 = new NetCipher();
-			 		URL url = new URL(adr1);
-			 		NetCipher.setProxy(proxy, port);
-			 		connection = NetCipher.getHttpsURLConnection(url);
+			 		URL url = new URL(adr2);
+			 		//NetCipher.setProxy(proxy, port);
+			 		connection = NetCipher.getHttpURLConnection(url);
 					
-					Random r1 = new Random();
-					int indx1 = r1.nextInt(userAgents.size() - 1);
-					connection.setRequestProperty("User-Agent", userAgents.get(indx1));
+					//Random r1 = new Random();
+					//int indx1 = r1.nextInt(userAgents.size() - 1);
+					//connection.setRequestProperty("User-Agent", userAgents.get(indx1));
 					
 			 		//connection.setReadTimeout(10000);
 			 		//connection.setConnectTimeout(10000);
@@ -377,14 +336,75 @@ public class MainActivity extends Activity
 
 			 		// Connect
 			 		connection.connect();
+					
+					String fullpath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/proxy0.txt";
+					File d = new File(fullpath);
+					d.createNewFile();
+					
+					final FileOutputStream fileOutputStream = new FileOutputStream(d);
+					final byte buffer[] = new byte[16 * 1024];
 
-			 		if(!(connection.getResponseCode() == HttpsURLConnection.HTTP_OK)){
-			 			Toast.makeText(getApplicationContext(), proxy + ": failed", Toast.LENGTH_LONG).show();
-			 		}else{
-						String con = readStream(connection.getInputStream());
-						//BA1.executeOnExecutor( AsyncTask.THREAD_POOL_EXECUTOR, new String[] { proxies.get(indx) } );
-			 			
+					final InputStream inputStream = connection.getInputStream();
+
+					int len1 = 0;
+					while ((len1 = inputStream.read(buffer)) > 0) {
+						fileOutputStream.write(buffer, 0, len1);
 					}
+					
+					fileOutputStream.flush();
+					fileOutputStream.close();
+					
+					String line = "";
+
+					try {
+						FileReader fReader = new FileReader(d);
+						BufferedReader bReader = new BufferedReader(fReader);
+
+						String text = "";
+						while( (line = bReader.readLine()) != null  ){
+							text = text + line;
+						}
+						
+						String pattern = "\\d{1,3}(?:\\.\\d{1,3}){3}(?::\\d{1,5})?";
+						Pattern compiledPattern = Pattern.compile(pattern);
+						Matcher matcher = compiledPattern.matcher(text);
+						while (matcher.find()) {
+							checker.add(matcher.group());
+						}
+						/*
+						String fullpath0 = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/proxy0.txt";
+						File d0 = new File(fullpath);
+						d0.createNewFile();
+
+						final FileOutputStream fileOutputStream0 = new FileOutputStream(d0);
+						final byte buffer0[] = new byte[16 * 1024];
+						
+						for(int i1 = 0; i1 < checker.size(); i1++){
+							fileOutputStream0.write(buffer, 0, i1);
+						}
+
+						fileOutputStream0.flush();
+						fileOutputStream0.close();
+						*/
+						
+						String fullpath0 = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/proxy0.txt";
+						File d0 = new File(fullpath0);
+						
+						FileOutputStream stream = new FileOutputStream(d0);
+					
+						for(int i2 = 0; i2 < checker.size(); i2++){
+							String s = checker.get(i2) + "\n";
+							stream.write(s.getBytes());
+						}
+						
+						stream.flush();
+						stream.close();
+						
+					//	Toast.makeText(getApplicationContext(), checker.get(0), Toast.LENGTH_SHORT).show();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					
 				}catch (IOException e)
 			 	{
 			 		if(connection != null){
@@ -392,7 +412,8 @@ public class MainActivity extends Activity
 			 			connection = null;
 				 	}
 			 	}
-				mHandler.post(this);
+				
+				//mHandler.post(this);
 		}
 	}
 
