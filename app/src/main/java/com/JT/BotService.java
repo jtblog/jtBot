@@ -12,6 +12,9 @@ import java.net.*;
 import java.util.*;
 import java.util.regex.*;
 import javax.net.ssl.*;
+import org.jsoup.*;
+import org.jsoup.nodes.*;
+import org.jsoup.select.*;
 
 public class BotService extends Service
 {
@@ -22,7 +25,6 @@ public class BotService extends Service
 	public List<String> proxies;
 	public List<String> userAgents;
 	public List<String> checker;
-	public List<WebView> viewers;
 
 	public PowerManager.WakeLock wakeLock;
 	
@@ -68,8 +70,7 @@ public class BotService extends Service
 		proxies = new ArrayList<String>();
 		userAgents = new ArrayList<String>();
 		checker = new ArrayList<String>();
-		viewers = new ArrayList<WebView>();
-
+		
 		File baseDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/");
 		if(!baseDir.exists()){
 			baseDir.mkdirs();
@@ -92,9 +93,7 @@ public class BotService extends Service
 			} catch (IOException e) {
 
 			}
-
-			//mWebView.loadUrl("https://jtblog.github.io");
-
+			
 		}else{
 
 		}
@@ -108,6 +107,7 @@ public class BotService extends Service
 		
 		if(proxies.size() > 0){
 			
+			/*
 			String[] params = proxies.get(indx).split(":");
 			String proxy = params[0];
 			int port = Integer.parseInt(params[1]);
@@ -121,6 +121,8 @@ public class BotService extends Service
 			hm.put("Referrer", "http://google.com");
 			
 			mWebView.loadUrl("https://jtblog.github.io", hm);
+			*/
+			
 			mHandler.post(new BotRunnable1());
 		}else{
 			mHandler.postDelayed(new BotRunnable0(), 10000);
@@ -335,8 +337,11 @@ public class BotService extends Service
 				}
 			}
 		
-			//mHandler.postDelayed(new BotRunnable0(), 10000);
+			//Update ProxyList
+			mHandler.post(new BotRunnable2());
 			
+			//Bot
+			mHandler.postDelayed(new BotRunnable1(), 10000);
 		}
 	}
 	
@@ -393,24 +398,31 @@ public class BotService extends Service
 					
 					Boolean b = setProxy(webv, proxy, port, null);
 					
-					/*
-					String fullpath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/index.html";
-					File d = new File(fullpath);
-					d.createNewFile();
+					webv.setWebViewClient(new mWebViewClient0());
+					
+					String res = readStream(connection.getInputStream());
 
-					final FileOutputStream fileOutputStream = new FileOutputStream(d);
-					final byte buffer[] = new byte[16 * 1024];
+					Document doc = Jsoup.parse(res);
+					Elements es = doc.select("#Ads");
 
-					final InputStream inputStream = connection.getInputStream();
-
-					int len1 = 0;
-					while ((len1 = inputStream.read(buffer)) > 0) {
-						fileOutputStream.write(buffer, 0, len1);
+					String strg = "<html><body>";
+					for(int ei = 0; ei < es.size(); ei++){
+						Element e = es.get(ei);
+						strg = strg + e.outerHtml();
 					}
+					strg = strg + "</body></html>";
 
-					fileOutputStream.flush();
-					fileOutputStream.close();
-					*/
+					Toast.makeText(getApplicationContext(), strg, Toast.LENGTH_SHORT).show();
+
+					String baseUrl    = "https://jtblog.github.io";
+					String data       = strg;
+					String mimeType   = "text/html";
+					String encoding   = "UTF-8";
+					String historyUrl = "https://jtblog.github.io";
+					
+					webv.loadDataWithBaseURL(baseUrl, data, mimeType, encoding, historyUrl);
+
+					//mWebView.loadData(strg, "text/html", null);
 			 		
 				}catch (IOException e)
 			 	{
@@ -426,6 +438,49 @@ public class BotService extends Service
 			}
 				
 				mHandler.post(this);
+		}
+	}
+	
+	public class BotRunnable2 implements Runnable
+	{
+
+		public BotRunnable2(){
+
+		}
+
+		@Override
+		public void run()
+		{
+			// TODO: Implement this method
+			proxies = new ArrayList<String>();
+			
+			File baseDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/");
+			if(!baseDir.exists()){
+				baseDir.mkdirs();
+			}
+
+			String fullpath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/proxies.txt";
+			File p = new File(fullpath);
+
+			if (p.exists()){
+
+				String line = "";
+
+				try {
+					FileReader fReader = new FileReader(p);
+					BufferedReader bReader = new BufferedReader(fReader);
+
+					while( (line = bReader.readLine()) != null){
+						proxies.add(line);
+					}
+				} catch (IOException e) {
+
+				}
+
+			}else{
+
+			}
+			
 		}
 	}
 	
@@ -534,7 +589,7 @@ public class BotService extends Service
 		@Override
 		public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error)
 		{
-			//super.onReceivedError(view, request, error);
+			super.onReceivedError(view, request, error);
 		}
 
 		@Override
@@ -548,6 +603,8 @@ public class BotService extends Service
 		public void onPageFinished(WebView view, String url)
 		{
 			// TODO: Implement this method
+			view = null;
+			super.onPageFinished(view, url);
 		}
 
     }

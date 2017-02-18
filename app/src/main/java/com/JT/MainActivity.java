@@ -93,13 +93,13 @@ public class MainActivity extends Activity
 		
 		//mWebView.loadUrl("http://txt.proxyspy.net/proxy.txt");
 		if(proxies.size() > 0){
-        	mHandler.post(new BotRunnable1());
+        	//mHandler.post(new BotRunnable1());
 		}else{
 			mHandler.post(new BotRunnable0());
 		}
 		
 		if(!isServiceRunning(BotService.class) == true){
-			//startService(new Intent(getApplicationContext(), BotService.class));
+			startService(new Intent(getApplicationContext(), BotService.class));
 		}
     }
 
