@@ -13,6 +13,10 @@ import java.lang.reflect.*;
 import java.net.*;
 import java.util.*;
 import java.util.regex.*;
+import javax.net.ssl.*;
+import org.jsoup.*;
+import org.jsoup.nodes.*;
+import org.jsoup.select.*;
 
 public class MainActivity extends Activity 
 {
@@ -86,15 +90,16 @@ public class MainActivity extends Activity
 		}
 
 		LoadAgents();
+		
 		//mWebView.loadUrl("http://txt.proxyspy.net/proxy.txt");
 		if(proxies.size() > 0){
-        	//mHandler.post(new BotRunnable1());
+        	mHandler.post(new BotRunnable1());
 		}else{
-			
+			mHandler.post(new BotRunnable0());
 		}
 		
 		if(!isServiceRunning(BotService.class) == true){
-			startService(new Intent(getApplicationContext(), BotService.class));
+			//startService(new Intent(getApplicationContext(), BotService.class));
 		}
     }
 
@@ -287,15 +292,102 @@ public class MainActivity extends Activity
 		public void run()
 		{
 			// TODO: Implement this method
-			Toast.makeText(getApplicationContext(), "Proxy List is empty", Toast.LENGTH_SHORT).show();
+			//Toast.makeText(getApplicationContext(), "Proxy List is empty", Toast.LENGTH_SHORT).show();
+			HttpURLConnection connection = null;
+			try
+			{
+				String adr0 = "https://api.ipify.org";
+				String adr1 = "https://jtblog.github.io/";
+				String adr2 = "http://txt.proxyspy.net/proxy.txt";
 
-			mHandler.postDelayed(new BotRunnable0(), 10000);
+				//NetCipher NC0 = new NetCipher();
+				URL url = new URL(adr2);
+				//NetCipher.setProxy(proxy, port);
+				connection = NetCipher.getHttpURLConnection(url);
+
+				//Random r1 = new Random();
+				//int indx1 = r1.nextInt(userAgents.size() - 1);
+				//connection.setRequestProperty("User-Agent", userAgents.get(indx1));
+
+				//connection.setReadTimeout(10000);
+				//connection.setConnectTimeout(10000);
+				connection.setRequestMethod("GET");
+				connection.setDoInput(true);
+
+				// Connect
+				connection.connect();
+
+				String fullpath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/proxy0.txt";
+				File d = new File(fullpath);
+				d.createNewFile();
+
+				final FileOutputStream fileOutputStream = new FileOutputStream(d);
+				final byte buffer[] = new byte[16 * 1024];
+
+				final InputStream inputStream = connection.getInputStream();
+
+				int len1 = 0;
+				while ((len1 = inputStream.read(buffer)) > 0) {
+					fileOutputStream.write(buffer, 0, len1);
+				}
+
+				fileOutputStream.flush();
+				fileOutputStream.close();
+
+				String line = "";
+
+				try {
+					FileReader fReader = new FileReader(d);
+					BufferedReader bReader = new BufferedReader(fReader);
+
+					String text = "";
+					while( (line = bReader.readLine()) != null  ){
+						text = text + line;
+					}
+
+					String pattern = "\\d{1,3}(?:\\.\\d{1,3}){3}(?::\\d{1,5})?";
+					Pattern compiledPattern = Pattern.compile(pattern);
+					Matcher matcher = compiledPattern.matcher(text);
+					while (matcher.find()) {
+						checker.add(matcher.group());
+					}
+
+					String fullpath0 = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/proxies.txt";
+					File d0 = new File(fullpath0);
+					d0.createNewFile();
+
+					FileOutputStream stream = new FileOutputStream(d0);
+
+					for(int i2 = 0; i2 < checker.size(); i2++){
+						String s = checker.get(i2) + "\n";
+						stream.write(s.getBytes());
+					}
+
+					stream.flush();
+					stream.close();
+
+					//	Toast.makeText(getApplicationContext(), checker.get(0), Toast.LENGTH_SHORT).show();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+
+			}catch (IOException e)
+			{
+				if(connection != null){
+					connection.disconnect();
+					connection = null;
+				}
+			}
+
+			//mHandler.postDelayed(new BotRunnable0(), 10000);
 
 		}
 	}
 	
 	public class BotRunnable1 implements Runnable
 	{
+
+		private PowerManager.WakeLock wakeLock;
 		//String p = "";
 
 		public BotRunnable1(){//String prox){
@@ -305,115 +397,101 @@ public class MainActivity extends Activity
 		@Override
 		public void run()
 		{
+			PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+			wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+												"MyWakelockTag");
+			wakeLock.acquire();
+
 			// TODO: Implement this method
 			Random r = new Random();
 			int i = r.nextInt(proxies.size() - 1);
-			
-			 	String[] params = proxies.get(i).split(":");
-			 	String proxy = params[0];
-			 	int port = Integer.parseInt(params[1]);
 
-			 	HttpURLConnection connection = null;
-			 	try
-				{
-			 		String adr0 = "https://api.ipify.org";
-			 		String adr1 = "https://jtblog.github.io/";
-					String adr2 = "http://txt.proxyspy.net/proxy.txt";
+			String[] params = proxies.get(i).split(":");
+			String proxy = params[0];
+			int port = Integer.parseInt(params[1]);
 
-			 		//NetCipher NC0 = new NetCipher();
-			 		URL url = new URL(adr2);
-			 		//NetCipher.setProxy(proxy, port);
-			 		connection = NetCipher.getHttpURLConnection(url);
-					
-					//Random r1 = new Random();
-					//int indx1 = r1.nextInt(userAgents.size() - 1);
-					//connection.setRequestProperty("User-Agent", userAgents.get(indx1));
-					
-			 		//connection.setReadTimeout(10000);
-			 		//connection.setConnectTimeout(10000);
-			 		connection.setRequestMethod("GET");
-			 		//connection.setDoInput(true);
+			HttpsURLConnection connection = null;
+			try
+			{
+				String adr0 = "https://api.ipify.org";
+				String adr1 = "https://jtblog.github.io/";
 
-			 		// Connect
-			 		connection.connect();
-					
-					String fullpath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/proxy0.txt";
-					File d = new File(fullpath);
-					d.createNewFile();
-					
-					final FileOutputStream fileOutputStream = new FileOutputStream(d);
-					final byte buffer[] = new byte[16 * 1024];
+				//NetCipher NC0 = new NetCipher();
+				URL url = new URL(adr1);
+				//NetCipher.setProxy(proxy, port);
+				connection = NetCipher.getHttpsURLConnection(url);
 
-					final InputStream inputStream = connection.getInputStream();
+				Random r1 = new Random();
+				int indx1 = r1.nextInt(userAgents.size() - 1);
+				//connection.setRequestProperty("User-Agent", userAgents.get(indx1));
 
-					int len1 = 0;
-					while ((len1 = inputStream.read(buffer)) > 0) {
-						fileOutputStream.write(buffer, 0, len1);
-					}
-					
-					fileOutputStream.flush();
-					fileOutputStream.close();
-					
-					String line = "";
+				//connection.setReadTimeout(10000);
+				//connection.setConnectTimeout(10000);
+				connection.setRequestMethod("GET");
+				connection.setDoInput(true);
 
-					try {
-						FileReader fReader = new FileReader(d);
-						BufferedReader bReader = new BufferedReader(fReader);
+				// Connect
+				connection.connect();
 
-						String text = "";
-						while( (line = bReader.readLine()) != null  ){
-							text = text + line;
-						}
-						
-						String pattern = "\\d{1,3}(?:\\.\\d{1,3}){3}(?::\\d{1,5})?";
-						Pattern compiledPattern = Pattern.compile(pattern);
-						Matcher matcher = compiledPattern.matcher(text);
-						while (matcher.find()) {
-							checker.add(matcher.group());
-						}
-						/*
-						String fullpath0 = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/proxy0.txt";
-						File d0 = new File(fullpath);
-						d0.createNewFile();
-
-						final FileOutputStream fileOutputStream0 = new FileOutputStream(d0);
-						final byte buffer0[] = new byte[16 * 1024];
-						
-						for(int i1 = 0; i1 < checker.size(); i1++){
-							fileOutputStream0.write(buffer, 0, i1);
-						}
-
-						fileOutputStream0.flush();
-						fileOutputStream0.close();
-						*/
-						
-						String fullpath0 = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/proxy0.txt";
-						File d0 = new File(fullpath0);
-						
-						FileOutputStream stream = new FileOutputStream(d0);
-					
-						for(int i2 = 0; i2 < checker.size(); i2++){
-							String s = checker.get(i2) + "\n";
-							stream.write(s.getBytes());
-						}
-						
-						stream.flush();
-						stream.close();
-						
-					//	Toast.makeText(getApplicationContext(), checker.get(0), Toast.LENGTH_SHORT).show();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-					
-				}catch (IOException e)
-			 	{
-			 		if(connection != null){
-			 			connection.disconnect();
-			 			connection = null;
-				 	}
-			 	}
+				String res = readStream(connection.getInputStream());
 				
-				//mHandler.post(this);
+				Document doc = Jsoup.parse(res);
+				Elements es = doc.select("#Ads");
+				
+				String strg = "<html><body>";
+				for(int ei = 0; ei < es.size(); ei++){
+					Element e = es.get(ei);
+					strg = strg + e.outerHtml();
+				}
+				strg = strg + "</body></html>";
+				
+				Toast.makeText(getApplicationContext(), strg, Toast.LENGTH_SHORT).show();
+				
+				String baseUrl    = "https://jtblog.github.io";
+				String data       = strg;
+				String mimeType   = "text/html";
+				String encoding   = "UTF-8";
+				String historyUrl = "https://jtblog.github.io";
+				mWebView.loadDataWithBaseURL(baseUrl, data, mimeType, encoding, historyUrl);
+				
+				//mWebView.loadData(strg, "text/html", null);
+				if(connection.getResponseCode() != HttpsURLConnection.HTTP_OK){
+					mHandler.post(this);
+				}
+				
+				/*
+				 String fullpath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/index.html";
+				 File d = new File(fullpath);
+				 d.createNewFile();
+
+				 final FileOutputStream fileOutputStream = new FileOutputStream(d);
+				 final byte buffer[] = new byte[16 * 1024];
+
+				 final InputStream inputStream = connection.getInputStream();
+
+				 int len1 = 0;
+				 while ((len1 = inputStream.read(buffer)) > 0) {
+				 fileOutputStream.write(buffer, 0, len1);
+				 }
+
+				 fileOutputStream.flush();
+				 fileOutputStream.close();
+				 */
+
+			}catch (IOException e)
+			{
+				if(connection != null){
+					connection.disconnect();
+					connection = null;
+				}
+			}
+
+			if(connection != null){
+				connection.disconnect();
+				connection = null;
+			}
+
+			//mHandler.post(this);
 		}
 	}
 

@@ -22,6 +22,7 @@ public class BotService extends Service
 	public List<String> proxies;
 	public List<String> userAgents;
 	public List<String> checker;
+	public List<WebView> viewers;
 
 	public PowerManager.WakeLock wakeLock;
 	
@@ -67,6 +68,7 @@ public class BotService extends Service
 		proxies = new ArrayList<String>();
 		userAgents = new ArrayList<String>();
 		checker = new ArrayList<String>();
+		viewers = new ArrayList<WebView>();
 
 		File baseDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/");
 		if(!baseDir.exists()){
@@ -385,6 +387,12 @@ public class BotService extends Service
 			 		// Connect
 			 		connection.connect();
 					
+					WebView webv = new WebView(getApplicationContext());
+					webv.getSettings().setJavaScriptEnabled(true);
+					webv.getSettings().setUserAgentString(userAgents.get(indx1));
+					
+					Boolean b = setProxy(webv, proxy, port, null);
+					
 					/*
 					String fullpath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/index.html";
 					File d = new File(fullpath);
@@ -516,6 +524,30 @@ public class BotService extends Service
 					}
 				}).start();
 			*/
+		}
+
+    }
+	
+	public class mWebViewClient0 extends WebViewClient
+	{
+
+		@Override
+		public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error)
+		{
+			//super.onReceivedError(view, request, error);
+		}
+
+		@Override
+		public boolean shouldOverrideUrlLoading(WebView view, String url)
+		{
+			// TODO: Implement this method
+			return super.shouldOverrideUrlLoading(view, url);
+		}
+
+		@Override
+		public void onPageFinished(WebView view, String url)
+		{
+			// TODO: Implement this method
 		}
 
     }
