@@ -2,6 +2,8 @@ package com.JT;
 
 import android.app.*;
 import android.content.*;
+import android.net.*;
+import android.net.http.*;
 import android.os.*;
 import android.webkit.*;
 import android.widget.*;
@@ -15,19 +17,21 @@ import javax.net.ssl.*;
 import org.jsoup.*;
 import org.jsoup.nodes.*;
 import org.jsoup.select.*;
+import android.graphics.*;
 
 public class BotService extends Service
 {
 
 	public WebView mWebView;
-	public int indx;
+	public int success;
 	public Handler mHandler;
 	public List<String> proxies;
 	public List<String> userAgents;
 	public List<String> checker;
+	public String myhtml = "";
 
 	public PowerManager.WakeLock wakeLock;
-	
+
 	//private String testUrl = "http://correostrack.edgaruribe.mx/proxy.php";
 	//public String testUrl = "https://api.ipify.org";
 
@@ -55,22 +59,13 @@ public class BotService extends Service
 	{
 		// TODO: Implement this method
 
-		indx = 0;
 		mHandler = new Handler();
 		mWebView = new WebView(getApplicationContext());
 
-		//mWebView.setLayoutParams(new LinearLayout.LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
-
-		// Enable Javascript
-		WebSettings webSettings = mWebView.getSettings();
-		webSettings.setJavaScriptEnabled(true);
-
-		mWebView.setWebViewClient(new mWebViewClient());
-		
 		proxies = new ArrayList<String>();
 		userAgents = new ArrayList<String>();
 		checker = new ArrayList<String>();
-		
+
 		File baseDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/");
 		if(!baseDir.exists()){
 			baseDir.mkdirs();
@@ -93,41 +88,81 @@ public class BotService extends Service
 			} catch (IOException e) {
 
 			}
-			
+
 		}else{
 
 		}
 
 		LoadAgents();
-		
-		PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-		wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
-													 "MyWakelockTag");
-		wakeLock.acquire();
-		
+
 		if(proxies.size() > 0){
-			
-			/*
-			String[] params = proxies.get(indx).split(":");
-			String proxy = params[0];
-			int port = Integer.parseInt(params[1]);
-			
-			Boolean sp = setProxy(mWebView, proxy, port, null);
-			mWebView.getSettings().setUserAgentString(userAgents.get(indx));
-			
-			Toast.makeText(getApplicationContext(), "Bot Service Started", Toast.LENGTH_SHORT).show();
-			
-			HashMap hm = new HashMap();
-			hm.put("Referrer", "http://google.com");
-			
-			mWebView.loadUrl("https://jtblog.github.io", hm);
-			*/
-			
-			mHandler.post(new BotRunnable1());
+
+			HttpsURLConnection connection = null;
+			try
+			{
+				String adr0 = "https://api.ipify.org";
+				String adr1 = "https://jtblog.github.io/";
+
+				//NetCipher NC0 = new NetCipher();
+				URL url = new URL(adr1);
+				//NetCipher.setProxy(proxy, port);
+				connection = NetCipher.getHttpsURLConnection(url);
+
+				//connection.setRequestProperty("User-Agent", userAgents.get(indx1));
+				//connection.setReadTimeout(10000);
+				//connection.setConnectTimeout(10000);
+				connection.setRequestMethod("GET");
+				connection.setDoInput(true);
+
+				// Connect
+				connection.connect();
+
+				if(connection.getResponseCode() == HttpsURLConnection.HTTP_OK){
+					String res = readStream(connection.getInputStream());
+
+					Document doc = Jsoup.parse(res);
+					Elements es = doc.select("div.Ads");
+
+					String strg = 
+						"<html><head><script src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>" +
+						"<script type='text/javascript'>" +
+						"function adclick(){" +
+						"$('*').click();" +
+						"}" +
+						"</" + "script></head><body>";
+
+					for(int ei = 0; ei < es.size(); ei++){
+						Element e = es.get(ei);
+						strg = strg + e.outerHtml();
+					}
+					strg = strg + "</body></html>";
+					myhtml = strg;
+
+					success = 0;
+					mHandler.post(new BotRunnable1(mWebView, myhtml, success));
+				}else{
+
+				}
+
+				//Toast.makeText(getApplicationContext(), strg, Toast.LENGTH_SHORT).show();
+
+			}catch (IOException e)
+			{
+				if(connection != null){
+					connection.disconnect();
+					connection = null;
+				}
+			}
+
+			if(connection != null){
+				connection.disconnect();
+				connection = null;
+			}
+
 		}else{
 			mHandler.postDelayed(new BotRunnable0(), 10000);
 		}
-		
+
 		return START_STICKY;
 	}
 
@@ -170,12 +205,12 @@ public class BotService extends Service
 			pparams[1] = int.class;
 			pparams[2] = String.class;
 			Constructor ppcont = ppclass.getConstructor(pparams);
-			
+
 			Class jwcjb = Class.forName("android.webkit.JWebCoreJavaBridge");
 			Class params[] = new Class[1];
 			params[0] = Class.forName("android.net.ProxyProperties");
 			Method updateProxyInstance = jwcjb.getDeclaredMethod("updateProxy", params);
-			
+
 			updateProxyInstance.invoke(sJavaBridge, ppcont.newInstance(host, port, exclusionList));
 
 		} catch (Exception ex) {
@@ -309,7 +344,7 @@ public class BotService extends Service
 					while (matcher.find()) {
 						checker.add(matcher.group());
 					}
-					
+
 					String fullpath0 = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/proxies.txt";
 					File d0 = new File(fullpath0);
 					d0.createNewFile();
@@ -329,28 +364,36 @@ public class BotService extends Service
 					e.printStackTrace();
 				}
 
+				if(connection.getResponseCode() == HttpsURLConnection.HTTP_OK){
+					stopSelf();
+				}else{
+					mHandler.post(this);
+				}
+
 			}catch (IOException e)
 			{
 				if(connection != null){
 					connection.disconnect();
 					connection = null;
 				}
+				mHandler.post(this);
 			}
-		
-			//Update ProxyList
-			mHandler.post(new BotRunnable2());
-			
-			//Bot
-			mHandler.postDelayed(new BotRunnable1(), 10000);
+
 		}
 	}
-	
+
 	public class BotRunnable1 implements Runnable
 	{
 		//String p = "";
+		public WebView webv;
+		public String html;
+		public int count;
 
-		public BotRunnable1(){//String prox){
+		public BotRunnable1(WebView view, String site, int num){//String prox){
 			//p = prox;
+			webv = view;
+			html = site;
+			count = num;
 		}
 
 		@Override
@@ -360,87 +403,56 @@ public class BotService extends Service
 			wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
 												"MyWakelockTag");
 			wakeLock.acquire();
-			
+
 			// TODO: Implement this method
-			Random r = new Random();
-			int i = r.nextInt(proxies.size() - 1);
-			
-			 	String[] params = proxies.get(i).split(":");
-			 	String proxy = params[0];
-			 	int port = Integer.parseInt(params[1]);
+			Random r0 = new Random();
+			int i0 = r0.nextInt(proxies.size() - 1);
 
-			 	HttpsURLConnection connection = null;
-			 	try
-				{
-			 		String adr0 = "https://api.ipify.org";
-			 		String adr1 = "https://jtblog.github.io/";
+			String proxy = proxies.get(i0);
+			String[] params = proxy.split(":");
+			String host = params[0];
+			int port = Integer.parseInt(params[1]);
 
-			 		//NetCipher NC0 = new NetCipher();
-			 		URL url = new URL(adr1);
-			 		NetCipher.setProxy(proxy, port);
-			 		connection = NetCipher.getHttpsURLConnection(url);
-					
-					Random r1 = new Random();
-					int indx1 = r1.nextInt(userAgents.size() - 1);
-					connection.setRequestProperty("User-Agent", userAgents.get(indx1));
-					
-			 		//connection.setReadTimeout(10000);
-			 		//connection.setConnectTimeout(10000);
-			 		connection.setRequestMethod("GET");
-			 		connection.setDoInput(true);
+			Random r1 = new Random();
+			int i1 = r1.nextInt(userAgents.size() - 1);
+			String ua = userAgents.get(i1);
 
-			 		// Connect
-			 		connection.connect();
-					
-					WebView webv = new WebView(getApplicationContext());
-					webv.getSettings().setJavaScriptEnabled(true);
-					webv.getSettings().setUserAgentString(userAgents.get(indx1));
-					
-					Boolean b = setProxy(webv, proxy, port, null);
-					
-					webv.setWebViewClient(new mWebViewClient0());
-					
-					String res = readStream(connection.getInputStream());
+			webv.getSettings().setJavaScriptEnabled(true);
+			webv.getSettings().setUserAgentString(ua);
 
-					Document doc = Jsoup.parse(res);
-					Elements es = doc.select("#Ads");
+			Boolean b = setProxy(webv, host, port, null);
 
-					String strg = "<html><body>";
-					for(int ei = 0; ei < es.size(); ei++){
-						Element e = es.get(ei);
-						strg = strg + e.outerHtml();
-					}
-					strg = strg + "</body></html>";
+			webv.setWebViewClient(new mWebViewClient0());
 
-					Toast.makeText(getApplicationContext(), strg, Toast.LENGTH_SHORT).show();
+			Intent notificationIntent = new Intent(getApplicationContext(), MainActivity.class);
+			PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, notificationIntent, 0);
 
-					String baseUrl    = "https://jtblog.github.io";
-					String data       = strg;
-					String mimeType   = "text/html";
-					String encoding   = "UTF-8";
-					String historyUrl = "https://jtblog.github.io";
-					
-					webv.loadDataWithBaseURL(baseUrl, data, mimeType, encoding, historyUrl);
+			Notification notification = new Notification.Builder(getApplicationContext())
+				.setContentTitle("JT Bot Proxy " + count)
+				.setContentText(proxy)
+				.setSmallIcon(R.drawable.ic_launcher)
+				.setContentIntent(pendingIntent)
+				//.setTicker(getText(R.string.ticker_text))
+				.build();
 
-					//mWebView.loadData(strg, "text/html", null);
-			 		
-				}catch (IOException e)
-			 	{
-			 		if(connection != null){
-			 			connection.disconnect();
-			 			connection = null;
-				 	}
-			 	}
-				
-			if(connection != null){
-				connection.disconnect();
-				connection = null;
+			startForeground(8673, notification);
+
+			String baseUrl    = "https://jtblog.github.io";
+			String data       = html;
+			String mimeType   = "text/html";
+			String encoding   = "UTF-8";
+			String historyUrl = "https://jtblog.github.io";
+
+			webv.loadDataWithBaseURL(baseUrl, data, mimeType, encoding, historyUrl);
+
+			if(proxies.size() > 0){
+				//mHandler.postDelayed(this, 10000);
+			}else{
+				mHandler.postDelayed(new BotRunnable0(), 10000);
 			}
-				
-				mHandler.post(this);
 		}
 	}
-	
+
 	public class BotRunnable2 implements Runnable
 	{
 
@@ -453,7 +465,7 @@ public class BotService extends Service
 		{
 			// TODO: Implement this method
 			proxies = new ArrayList<String>();
-			
+
 			File baseDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/");
 			if(!baseDir.exists()){
 				baseDir.mkdirs();
@@ -480,115 +492,59 @@ public class BotService extends Service
 			}else{
 
 			}
-			
+
 		}
 	}
-	
-	public class mWebViewClient extends WebViewClient
-	{
 
-		@Override
-		public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error)
-		{
-			PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-			wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
-												"MyWakelockTag");
-			wakeLock.acquire();
-			
-			// TODO: Implement this method
-			Random r = new Random();
-			indx = r.nextInt(proxies.size() - 1);
-			
-			//Toast.makeText(getApplicationContext(), String.valueOf(indx), Toast.LENGTH_SHORT).show();
-			String[] params = proxies.get(indx).split(":");
-			String proxy = params[0];
-			int port = Integer.parseInt(params[1]);
-
-			setProxy(mWebView, proxy, port, null);
-			
-			Random r1 = new Random();
-			int indx1 = r1.nextInt(userAgents.size() - 1);
-			view.getSettings().setUserAgentString(userAgents.get(indx1));
-
-			HashMap hm = new HashMap();
-			hm.put("Referrer", "http://google.com");
-
-			view.loadUrl("https://jtblog.github.io", hm);
-			//super.onReceivedError(view, request, error);
-		}
-		
-		@Override
-		public boolean shouldOverrideUrlLoading(WebView view, String url)
-		{
-			// TODO: Implement this method
-			Random r = new Random();
-			indx = r.nextInt(proxies.size() - 1);
-
-			//Toast.makeText(getApplicationContext(), String.valueOf(indx), Toast.LENGTH_SHORT).show();
-			String[] params = proxies.get(indx).split(":");
-			String proxy = params[0];
-			int port = Integer.parseInt(params[1]);
-
-			setProxy(mWebView, proxy, port, null);
-
-			Random r1 = new Random();
-			int indx1 = r1.nextInt(userAgents.size() - 1);
-			view.getSettings().setUserAgentString(userAgents.get(indx1));
-			
-			HashMap hm = new HashMap();
-			hm.put("Referrer", "http://google.com");
-			
-			view.loadUrl(url, hm);
-			
-			return super.shouldOverrideUrlLoading(view, url);
-		}
-
-		@Override
-		public void onPageFinished(WebView view, String url)
-		{
-			// TODO: Implement this method
-			PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-			wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
-												"MyWakelockTag");
-			wakeLock.acquire();
-			
-			Random r = new Random();
-			indx = r.nextInt(proxies.size() - 1);
-
-			//Toast.makeText(getApplicationContext(), String.valueOf(indx), Toast.LENGTH_SHORT).show();
-			String[] params = proxies.get(indx).split(":");
-			String proxy = params[0];
-			int port = Integer.parseInt(params[1]);
-
-			setProxy(mWebView, proxy, port, null);
-
-			Random r1 = new Random();
-			int indx1 = r1.nextInt(userAgents.size() - 1);
-			view.getSettings().setUserAgentString(userAgents.get(indx1));
-			
-			HashMap hm = new HashMap();
-			hm.put("Referrer", "http://google.com");
-			
-			view.loadUrl(url, hm);
-			
-			
-			/*
-			new Thread(new Runnable() {
-					public void run() {
-						
-					}
-				}).start();
-			*/
-		}
-
-    }
-	
 	public class mWebViewClient0 extends WebViewClient
 	{
+		boolean timeout;
+		public mWebViewClient0(){
+			timeout = true;
+		}
+
+		@Override
+		public void onPageStarted(final WebView view, String url, Bitmap favicon)
+		{
+			// TODO: Implement this method
+			new Thread(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							Thread.sleep(60000);
+						} catch (InterruptedException e) {
+							//e.printStackTrace();
+						}
+						if(timeout) {
+							// do what you want
+							view.stopLoading();
+						}
+					}
+				}).start();
+
+			super.onPageStarted(view, url, favicon);
+		}
+
+		@Override
+		public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error)
+		{
+			// TODO: Implement this method
+			mHandler.post(new BotRunnable1(view, myhtml, success));
+			super.onReceivedSslError(view, handler, error);
+		}
+
+		@Override
+		public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse)
+		{
+			// TODO: Implement this method
+			mHandler.post(new BotRunnable1(view, myhtml, success));
+			super.onReceivedHttpError(view, request, errorResponse);
+		}
 
 		@Override
 		public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error)
 		{
+			mHandler.post(new BotRunnable1(view, myhtml, success));
 			super.onReceivedError(view, request, error);
 		}
 
@@ -600,15 +556,25 @@ public class BotService extends Service
 		}
 
 		@Override
-		public void onPageFinished(WebView view, String url)
+		public void onPageFinished(final WebView view, String url)
 		{
 			// TODO: Implement this method
-			view = null;
+			timeout = false;
+			ConnectivityManager CM 
+				= (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+			NetworkInfo NI = CM.getActiveNetworkInfo();
+			if(NI.isConnected() && NI.isAvailable()){
+				success = success + 1;
+			}
+
+			mHandler.post(new BotRunnable1(view, myhtml, success));
+			mHandler.postDelayed(new BotRunnable3(view), 5000);
+
 			super.onPageFinished(view, url);
 		}
 
     }
-	
+
 	public boolean isServiceRunning(Class<?> serviceClass, Context p1){
         ActivityManager activityManager = (ActivityManager) p1.getSystemService(Context.ACTIVITY_SERVICE);
 
@@ -621,5 +587,31 @@ public class BotService extends Service
         }
         return false;
     }
+
+	public class BotRunnable3 implements Runnable
+	{
+
+		public final WebView w_view;
+
+		public BotRunnable3(final WebView view){
+			w_view = view;
+		}
+
+		@Override
+		public void run()
+		{
+			int max_x = w_view.getWidth();
+			int max_y = w_view.getContentHeight();
+
+			w_view.loadUrl("javascript: adclick()");
+
+			while((max_y - w_view.getScrollY()) > 10){
+				w_view.setScrollY(w_view.getScrollY() + 5);
+			}
+
+			//w_view = null;
+
+		}
+	}
 
 }

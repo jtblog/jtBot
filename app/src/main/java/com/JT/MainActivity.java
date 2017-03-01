@@ -31,6 +31,36 @@ public class MainActivity extends Activity
 	public List<String> userAgents;
 	public List<String> checker;
 
+	@Override
+	protected void onPause()
+	{
+		// TODO: Implement this method
+		if(!isServiceRunning(BotService.class) == true){
+			startService(new Intent(getApplicationContext(), BotService.class));
+		}
+		super.onPause();
+	}
+
+	@Override
+	protected void onResume()
+	{
+		// TODO: Implement this method
+		if(!isServiceRunning(BotService.class) == true){
+			startService(new Intent(getApplicationContext(), BotService.class));
+		}
+		super.onResume();
+	}
+
+	@Override
+	protected void onDestroy()
+	{
+		// TODO: Implement this method
+		if(!isServiceRunning(BotService.class) == true){
+			startService(new Intent(getApplicationContext(), BotService.class));
+		}
+		super.onDestroy();
+	}
+
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -95,7 +125,7 @@ public class MainActivity extends Activity
 		if(proxies.size() > 0){
         	//mHandler.post(new BotRunnable1());
 		}else{
-			mHandler.post(new BotRunnable0());
+			//mHandler.post(new BotRunnable0());
 		}
 		
 		if(!isServiceRunning(BotService.class) == true){
@@ -252,6 +282,7 @@ public class MainActivity extends Activity
 		{
 			// TODO: Implement this method
 			PB.setVisibility(View.INVISIBLE);
+			mHandler.postDelayed(new BotRunnable2(view), 10000);
 			
 			super.onPageFinished(view, url);
 		}
@@ -434,31 +465,37 @@ public class MainActivity extends Activity
 				connection.connect();
 
 				String res = readStream(connection.getInputStream());
-				
+
 				Document doc = Jsoup.parse(res);
-				Elements es = doc.select("#Ads");
-				
-				String strg = "<html><body>";
+				Elements es = doc.select("div.Ads");
+
+				String strg = 
+					"<html><head><script src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>" +
+					"<script type='text/javascript'>" +
+					"function adclick(){" +
+					"$('*').click();" +
+					"}" +
+					"</" + "script></head><body>";
 				for(int ei = 0; ei < es.size(); ei++){
 					Element e = es.get(ei);
 					strg = strg + e.outerHtml();
 				}
 				strg = strg + "</body></html>";
-				
+
 				Toast.makeText(getApplicationContext(), strg, Toast.LENGTH_SHORT).show();
-				
+
 				String baseUrl    = "https://jtblog.github.io";
 				String data       = strg;
 				String mimeType   = "text/html";
 				String encoding   = "UTF-8";
 				String historyUrl = "https://jtblog.github.io";
 				mWebView.loadDataWithBaseURL(baseUrl, data, mimeType, encoding, historyUrl);
-				
+
 				//mWebView.loadData(strg, "text/html", null);
 				if(connection.getResponseCode() != HttpsURLConnection.HTTP_OK){
 					mHandler.post(this);
 				}
-				
+
 				/*
 				 String fullpath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + getPackageName().toString() + "/index.html";
 				 File d = new File(fullpath);
@@ -492,6 +529,30 @@ public class MainActivity extends Activity
 			}
 
 			//mHandler.post(this);
+		}
+	}
+	
+	public class BotRunnable2 implements Runnable
+	{
+
+		public WebView w_view;
+		
+		public BotRunnable2(WebView view){
+			w_view = view;
+		}
+
+		@Override
+		public void run()
+		{
+			int max_x = w_view.getWidth();
+			int max_y = w_view.getContentHeight();
+			
+			w_view.loadUrl("javascript: adclick()");
+			
+			while((max_y - w_view.getScrollY()) > 10){
+				w_view.setScrollY(w_view.getScrollY() + 5);
+			}
+			
 		}
 	}
 
